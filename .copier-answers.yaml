@@ -1,0 +1,13 @@
+# Changes here will be overwritten by Copier; NEVER EDIT MANUALLY
+_commit: 0.4.2
+_src_path: gh:radio-aktywne/template-package-python
+accountname: radio-aktywne
+description: Task scheduler for Python 🐍
+docs: true
+docsurl: https://radio-aktywne.github.io/package-pyscheduler
+email: it@radioaktywne.pl
+importname: pyscheduler
+packagename: pyscheduler
+releases: true
+reponame: package-pyscheduler
+repourl: https://github.com/radio-aktywne/package-pyscheduler

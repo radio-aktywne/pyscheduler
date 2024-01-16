@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "pyscheduler"
+version = "0.1.0"
+description = "Task scheduler for Python 🐍"
+authors = ["radio-aktywne <it@radioaktywne.pl>"]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+
+[tool.poetry.group.test.dependencies]
+pytest = "^7.4"
+pytest-asyncio = "^0.23"
+
+# See: https://python-poetry.org/docs/pyproject/#poetry-and-pep-517
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
