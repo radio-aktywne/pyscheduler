@@ -79,10 +79,20 @@ class Runner:
         return task.task
 
     async def _create_operation(self, type: str) -> Operation:
-        return await self._operations.create(type)
+        operation = await self._operations.create(type)
+
+        if operation is None:
+            raise InvalidOperationError(type)
+
+        return operation
 
     async def _create_condition(self, type: str) -> Condition:
-        return await self._conditions.create(type)
+        condition = await self._conditions.create(type)
+
+        if condition is None:
+            raise InvalidConditionError(type)
+
+        return condition
 
     async def _resolve_dependencies(
         self, dependencies: dict[str, UUID]
