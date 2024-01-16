@@ -2,6 +2,7 @@ from abc import abstractmethod
 from typing import Protocol
 
 from pyscheduler.models import transfer as t
+from pyscheduler.models import types
 
 
 class CleaningStrategy(Protocol):
@@ -9,7 +10,7 @@ class CleaningStrategy(Protocol):
 
     @abstractmethod
     async def evaluate(
-        self, task: t.FinishedTask, parameters: dict[str, t.JSON]
+        self, task: t.FinishedTask, parameters: dict[str, types.JSON]
     ) -> bool:
         """Evaluate if a task should be cleaned."""
 
