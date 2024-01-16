@@ -4,11 +4,12 @@ from uuid import UUID
 
 from pyscheduler.adder import Adder
 from pyscheduler.canceller import Canceller
-from pyscheduler.cleaner import Cleaner, CleaningStrategy
+from pyscheduler.cleaner import Cleaner
 from pyscheduler.events import EventCache, EventFactory
 from pyscheduler.models import transfer as t
 from pyscheduler.models.data import storage as s
 from pyscheduler.modifier import Modifier
+from pyscheduler.protocols.cleaning import CleaningStrategyFactory
 from pyscheduler.protocols.condition import ConditionFactory
 from pyscheduler.protocols.lock import Lock
 from pyscheduler.protocols.operation import OperationFactory
@@ -29,7 +30,7 @@ class Scheduler:
         queue: Queue[UUID],
         operations: OperationFactory,
         conditions: ConditionFactory,
-        cleaning: CleaningStrategy,
+        cleaning: CleaningStrategyFactory,
     ) -> None:
         tasks = Reader(store, lock)
         cache = EventCache(events)
@@ -37,7 +38,7 @@ class Scheduler:
         runner = Runner(store, lock, cache, queue, modifier, operations, conditions)
         adder = Adder(lock, queue, modifier, operations, conditions)
         canceller = Canceller(lock, cache, modifier)
-        cleaner = Cleaner(lock, cleaning, modifier)
+        cleaner = Cleaner(lock, modifier, cleaning)
 
         self._tasks = tasks
         self._runner = runner
@@ -61,10 +62,14 @@ class Scheduler:
 
         return await self._canceller.cancel(request)
 
+    async def clean(self, request: t.CleanRequest) -> t.CleaningResult:
+        """Clean tasks."""
+
+        return await self._cleaner.clean(request)
+
     @asynccontextmanager
     async def run(self) -> AsyncGenerator[None, None]:
         """Run in the context."""
 
         async with self._runner.run():
-            async with self._cleaner.run():
-                yield
+            yield

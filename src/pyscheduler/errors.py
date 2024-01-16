@@ -114,3 +114,15 @@ class UnexpectedTaskStatusError(SchedulerError):
     @property
     def status(self) -> e.Status:
         return self._status
+
+
+class InvalidCleaningStrategyError(SchedulerError):
+    """Raised when a cleaning strategy is invalid."""
+
+    def __init__(self, type: str) -> None:
+        super().__init__(f"Invalid cleaning strategy: {type}.")
+        self._type = type
+
+    @property
+    def type(self) -> str:
+        return self._type

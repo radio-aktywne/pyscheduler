@@ -31,6 +31,13 @@ class CancelRequest:
 
 
 @dataclass
+class CleanRequest:
+    """Request to clean tasks."""
+
+    strategy: Specification
+
+
+@dataclass
 class Task:
     """Core task data."""
 
@@ -109,3 +116,10 @@ class CompletedTask:
 
 
 FinishedTask = CancelledTask | FailedTask | CompletedTask
+
+
+@dataclass
+class CleaningResult:
+    """Result of cleaning."""
+
+    removed: set[UUID]
