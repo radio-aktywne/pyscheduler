@@ -1,5 +1,6 @@
-from collections.abc import Awaitable, Callable
+from abc import abstractmethod
 from datetime import datetime
+from typing import Protocol
 from uuid import UUID
 
 from pyscheduler.errors import (
@@ -13,6 +14,12 @@ from pyscheduler.models import types
 from pyscheduler.models.data import runtime as r
 from pyscheduler.models.data import storage as s
 from pyscheduler.protocols.store import Store
+
+
+class RemovePredicate(Protocol):
+    @abstractmethod
+    async def __call__(self, task: t.FinishedTask) -> bool:
+        pass
 
 
 class Modifier:
@@ -255,7 +262,7 @@ class Modifier:
 
     async def remove_stale_tasks(
         self,
-        predicate: Callable[[t.FinishedTask], Awaitable[bool]] | None = None,
+        predicate: RemovePredicate | None = None,
     ) -> set[UUID]:
         """Remove finished tasks that are no longer needed."""
 
