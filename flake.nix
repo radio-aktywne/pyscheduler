@@ -1,7 +1,7 @@
 {
   inputs = {
     nixpkgs = {
-      url = "github:NixOS/nixpkgs/nixos-unstable";
+      url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     };
 
     flake-parts = {
@@ -36,7 +36,7 @@
         ...
       }: let
         node = pkgs.nodejs;
-        python = pkgs.python312;
+        python = pkgs.python311;
         nil = pkgs.nil;
         task = pkgs.go-task;
         coreutils = pkgs.coreutils;
@@ -76,13 +76,8 @@
               copier
             ];
 
-            PYTHON_SITE_PACKAGES = "${python.sitePackages}";
-
             shellHook = ''
               export TMPDIR=/tmp
-              task install
-              . .venv/bin/activate
-              export PYTHONPATH="''${VIRTUAL_ENV:?}/''${PYTHON_SITE_PACKAGES:?}:''${PYTHONPATH:-}"
             '';
           };
 
@@ -96,13 +91,8 @@
               poetry
             ];
 
-            PYTHON_SITE_PACKAGES = "${python.sitePackages}";
-
             shellHook = ''
               export TMPDIR=/tmp
-              task install
-              . .venv/bin/activate
-              export PYTHONPATH="''${VIRTUAL_ENV:?}/''${PYTHON_SITE_PACKAGES:?}:''${PYTHONPATH:-}"
             '';
           };
 
@@ -145,13 +135,8 @@
               poetry
             ];
 
-            PYTHON_SITE_PACKAGES = "${python.sitePackages}";
-
             shellHook = ''
               export TMPDIR=/tmp
-              task install
-              . .venv/bin/activate
-              export PYTHONPATH="''${VIRTUAL_ENV:?}/''${PYTHON_SITE_PACKAGES:?}:''${PYTHONPATH:-}"
             '';
           };
 
