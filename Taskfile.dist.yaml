@@ -201,5 +201,6 @@ tasks:
       - >
         poetry
         run
+        --
         pytest
         {{ .CLI_ARGS }}
