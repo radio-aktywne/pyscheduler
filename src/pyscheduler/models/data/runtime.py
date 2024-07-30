@@ -1,37 +1,30 @@
+import builtins
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Generic, TypedDict, TypeVar
 from uuid import UUID
 
 from pyscheduler.models import enums as e
 from pyscheduler.models import types as t
 from pyscheduler.models.data import storage as s
 
-StorageModelType = TypeVar("StorageModelType", bound=TypedDict)
-RuntimeModelType = TypeVar("RuntimeModelType", bound="BaseModel")
-StorageType = TypeVar("StorageType")
-RuntimeType = TypeVar("RuntimeType")
 
-
-class BaseModel(Generic[StorageModelType], ABC):
+class BaseModel[S: dict](ABC):
     """Base class for runtime data models."""
 
     @abstractmethod
-    def serialize(self) -> StorageModelType:
+    def serialize(self) -> S:
         """Serialize the model to a storage model."""
         pass
 
     @classmethod
     @abstractmethod
-    def deserialize(
-        cls: type[RuntimeModelType], data: StorageModelType
-    ) -> RuntimeModelType:
+    def deserialize[C: BaseModel](cls: builtins.type[C], data: S) -> C:
         """Deserialize the model from a storage model."""
         pass
 
 
-@dataclass
+@dataclass(kw_only=True)
 class Specification(BaseModel[s.Specification]):
     """Generic specification for type-based implementation."""
 
@@ -45,16 +38,16 @@ class Specification(BaseModel[s.Specification]):
         }
 
     @classmethod
-    def deserialize(
-        cls: type["Specification"], data: s.Specification
-    ) -> "Specification":
+    def deserialize[
+        C: Specification
+    ](cls: builtins.type[C], data: s.Specification) -> C:
         return cls(
             type=data["type"],
             parameters=data["parameters"],
         )
 
 
-@dataclass
+@dataclass(kw_only=True)
 class Task(BaseModel[s.Task]):
     """Core task data."""
 
@@ -72,7 +65,7 @@ class Task(BaseModel[s.Task]):
         }
 
     @classmethod
-    def deserialize(cls: type["Task"], data: s.Task) -> "Task":
+    def deserialize[C: Task](cls: builtins.type[C], data: s.Task) -> C:
         return cls(
             operation=Specification.deserialize(data["operation"]),
             condition=Specification.deserialize(data["condition"]),
@@ -82,7 +75,7 @@ class Task(BaseModel[s.Task]):
         )
 
 
-@dataclass
+@dataclass(kw_only=True)
 class PendingTask(BaseModel[s.PendingTask]):
     """Data of a pending task."""
 
@@ -96,14 +89,14 @@ class PendingTask(BaseModel[s.PendingTask]):
         }
 
     @classmethod
-    def deserialize(cls: type["PendingTask"], data: s.PendingTask) -> "PendingTask":
+    def deserialize[C: PendingTask](cls: builtins.type[C], data: s.PendingTask) -> C:
         return cls(
             task=Task.deserialize(data["task"]),
             scheduled=datetime.fromisoformat(data["scheduled"]),
         )
 
 
-@dataclass
+@dataclass(kw_only=True)
 class RunningTask(BaseModel[s.RunningTask]):
     """Data of a running task."""
 
@@ -119,7 +112,7 @@ class RunningTask(BaseModel[s.RunningTask]):
         }
 
     @classmethod
-    def deserialize(cls: type["RunningTask"], data: s.RunningTask) -> "RunningTask":
+    def deserialize[C: RunningTask](cls: builtins.type[C], data: s.RunningTask) -> C:
         return cls(
             task=Task.deserialize(data["task"]),
             scheduled=datetime.fromisoformat(data["scheduled"]),
@@ -127,7 +120,7 @@ class RunningTask(BaseModel[s.RunningTask]):
         )
 
 
-@dataclass
+@dataclass(kw_only=True)
 class CancelledTask(BaseModel[s.CancelledTask]):
     """Data of a cancelled task."""
 
@@ -145,20 +138,22 @@ class CancelledTask(BaseModel[s.CancelledTask]):
         }
 
     @classmethod
-    def deserialize(
-        cls: type["CancelledTask"], data: s.CancelledTask
-    ) -> "CancelledTask":
+    def deserialize[
+        C: CancelledTask
+    ](cls: builtins.type[C], data: s.CancelledTask) -> C:
         return cls(
             task=Task.deserialize(data["task"]),
             scheduled=datetime.fromisoformat(data["scheduled"]),
-            started=datetime.fromisoformat(data["started"])
-            if data["started"] is not None
-            else None,
+            started=(
+                datetime.fromisoformat(data["started"])
+                if data["started"] is not None
+                else None
+            ),
             cancelled=datetime.fromisoformat(data["cancelled"]),
         )
 
 
-@dataclass
+@dataclass(kw_only=True)
 class FailedTask(BaseModel[s.FailedTask]):
     """Data of a failed task."""
 
@@ -178,7 +173,7 @@ class FailedTask(BaseModel[s.FailedTask]):
         }
 
     @classmethod
-    def deserialize(cls: type["FailedTask"], data: s.FailedTask) -> "FailedTask":
+    def deserialize[C: FailedTask](cls: builtins.type[C], data: s.FailedTask) -> C:
         return cls(
             task=Task.deserialize(data["task"]),
             scheduled=datetime.fromisoformat(data["scheduled"]),
@@ -188,7 +183,7 @@ class FailedTask(BaseModel[s.FailedTask]):
         )
 
 
-@dataclass
+@dataclass(kw_only=True)
 class CompletedTask(BaseModel[s.CompletedTask]):
     """Data of a completed task."""
 
@@ -208,9 +203,9 @@ class CompletedTask(BaseModel[s.CompletedTask]):
         }
 
     @classmethod
-    def deserialize(
-        cls: type["CompletedTask"], data: s.CompletedTask
-    ) -> "CompletedTask":
+    def deserialize[
+        C: CompletedTask
+    ](cls: builtins.type[C], data: s.CompletedTask) -> C:
         return cls(
             task=Task.deserialize(data["task"]),
             scheduled=datetime.fromisoformat(data["scheduled"]),
@@ -220,7 +215,7 @@ class CompletedTask(BaseModel[s.CompletedTask]):
         )
 
 
-@dataclass
+@dataclass(kw_only=True)
 class Tasks(BaseModel[s.Tasks]):
     """Tasks data organized by status."""
 
@@ -231,10 +226,8 @@ class Tasks(BaseModel[s.Tasks]):
     completed: dict[UUID, CompletedTask]
 
     def serialize(self) -> s.Tasks:
-        class Serializer(Generic[RuntimeModelType, StorageModelType]):
-            def serialize(
-                self, data: dict[UUID, RuntimeModelType]
-            ) -> dict[str, StorageModelType]:
+        class Serializer[R, S]:
+            def serialize(self, data: dict[UUID, R]) -> dict[str, S]:
                 return {str(key): value.serialize() for key, value in data.items()}
 
         return {
@@ -256,14 +249,12 @@ class Tasks(BaseModel[s.Tasks]):
         }
 
     @classmethod
-    def deserialize(cls: type["Tasks"], data: s.Tasks) -> "Tasks":
-        class Deserializer(Generic[StorageModelType, RuntimeModelType]):
-            def __init__(self, model: type[RuntimeModelType]) -> None:
+    def deserialize[C: Tasks](cls: builtins.type[C], data: s.Tasks) -> C:
+        class Deserializer[R, S]:
+            def __init__(self, model: builtins.type[R]) -> None:
                 self._model = model
 
-            def deserialize(
-                self, data: dict[str, StorageModelType]
-            ) -> dict[UUID, RuntimeModelType]:
+            def deserialize(self, data: dict[str, S]) -> dict[UUID, R]:
                 return {
                     UUID(key): self._model.deserialize(value)
                     for key, value in data.items()
@@ -298,7 +289,7 @@ class Tasks(BaseModel[s.Tasks]):
         )
 
 
-@dataclass
+@dataclass(kw_only=True)
 class Relationships(BaseModel[s.Relationships]):
     """Relationships between tasks."""
 
@@ -306,10 +297,8 @@ class Relationships(BaseModel[s.Relationships]):
     dependencies: dict[UUID, set[UUID]]
 
     def serialize(self) -> s.Relationships:
-        class Serializer(Generic[RuntimeType, StorageType]):
-            def serialize(
-                self, data: dict[UUID, set[RuntimeType]]
-            ) -> dict[str, list[StorageType]]:
+        class Serializer[R, S]:
+            def serialize(self, data: dict[UUID, set[R]]) -> dict[str, list[S]]:
                 return {
                     str(key): [str(value) for value in values]
                     for key, values in data.items()
@@ -321,13 +310,11 @@ class Relationships(BaseModel[s.Relationships]):
         }
 
     @classmethod
-    def deserialize(
-        cls: type["Relationships"], data: s.Relationships
-    ) -> "Relationships":
-        class Deserializer(Generic[StorageType, RuntimeType]):
-            def deserialize(
-                self, data: dict[str, list[StorageType]]
-            ) -> dict[UUID, set[RuntimeType]]:
+    def deserialize[
+        C: Relationships
+    ](cls: builtins.type[C], data: s.Relationships) -> C:
+        class Deserializer[R, S]:
+            def deserialize(self, data: dict[str, list[S]]) -> dict[UUID, set[R]]:
                 return {
                     UUID(key): {UUID(value) for value in values}
                     for key, values in data.items()
@@ -339,7 +326,7 @@ class Relationships(BaseModel[s.Relationships]):
         )
 
 
-@dataclass
+@dataclass(kw_only=True)
 class State(BaseModel[s.State]):
     """State of the scheduler."""
 
@@ -355,7 +342,7 @@ class State(BaseModel[s.State]):
         }
 
     @classmethod
-    def deserialize(cls: type["State"], data: s.State) -> "State":
+    def deserialize[C: State](cls: builtins.type[C], data: s.State) -> C:
         return cls(
             tasks=Tasks.deserialize(data["tasks"]),
             statuses={

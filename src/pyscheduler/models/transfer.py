@@ -6,7 +6,7 @@ from pyscheduler.models.enums import Status
 from pyscheduler.models.types import JSON
 
 
-@dataclass
+@dataclass(kw_only=True)
 class Specification:
     """Generic specification for type-based implementation."""
 
@@ -14,7 +14,7 @@ class Specification:
     parameters: dict[str, JSON]
 
 
-@dataclass
+@dataclass(kw_only=True)
 class ScheduleRequest:
     """Request to schedule a task."""
 
@@ -23,21 +23,21 @@ class ScheduleRequest:
     dependencies: dict[str, UUID]
 
 
-@dataclass
+@dataclass(kw_only=True)
 class CancelRequest:
     """Request to cancel a task."""
 
     id: UUID
 
 
-@dataclass
+@dataclass(kw_only=True)
 class CleanRequest:
     """Request to clean tasks."""
 
     strategy: Specification
 
 
-@dataclass
+@dataclass(kw_only=True)
 class Task:
     """Core task data."""
 
@@ -47,7 +47,7 @@ class Task:
     dependencies: dict[str, UUID]
 
 
-@dataclass
+@dataclass(kw_only=True)
 class TaskIndex:
     """Index of tasks by status."""
 
@@ -58,7 +58,7 @@ class TaskIndex:
     completed: set[UUID]
 
 
-@dataclass
+@dataclass(kw_only=True)
 class GenericTask:
     """Data of a task of any status."""
 
@@ -66,7 +66,7 @@ class GenericTask:
     status: Status
 
 
-@dataclass
+@dataclass(kw_only=True)
 class PendingTask:
     """Data of a pending task."""
 
@@ -74,7 +74,7 @@ class PendingTask:
     scheduled: datetime
 
 
-@dataclass
+@dataclass(kw_only=True)
 class RunningTask:
     """Data of a running task."""
 
@@ -83,7 +83,7 @@ class RunningTask:
     started: datetime
 
 
-@dataclass
+@dataclass(kw_only=True)
 class CancelledTask:
     """Data of a cancelled task."""
 
@@ -93,7 +93,7 @@ class CancelledTask:
     cancelled: datetime
 
 
-@dataclass
+@dataclass(kw_only=True)
 class FailedTask:
     """Data of a failed task."""
 
@@ -104,7 +104,7 @@ class FailedTask:
     error: str
 
 
-@dataclass
+@dataclass(kw_only=True)
 class CompletedTask:
     """Data of a completed task."""
 
@@ -118,7 +118,7 @@ class CompletedTask:
 FinishedTask = CancelledTask | FailedTask | CompletedTask
 
 
-@dataclass
+@dataclass(kw_only=True)
 class CleaningResult:
     """Result of cleaning."""
 

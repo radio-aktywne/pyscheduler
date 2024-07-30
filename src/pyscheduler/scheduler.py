@@ -68,7 +68,7 @@ class Scheduler:
         return await self._cleaner.clean(request)
 
     @asynccontextmanager
-    async def run(self) -> AsyncGenerator[None, None]:
+    async def run(self) -> AsyncGenerator[None]:
         """Run in the context."""
 
         async with self._runner.run():

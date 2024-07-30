@@ -1,10 +1,8 @@
 from abc import abstractmethod
-from typing import Protocol, TypeVar
-
-T = TypeVar("T")
+from typing import Protocol
 
 
-class Store(Protocol[T]):
+class Store[T](Protocol):
     """Supports getting and setting a value."""
 
     @abstractmethod

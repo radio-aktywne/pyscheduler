@@ -8,7 +8,7 @@ class EventCache:
 
     _factory: EventFactory
     _cache: dict[str, Event]
-    _lock: asyncio.Lock()
+    _lock: asyncio.Lock
 
     def __init__(self, factory: EventFactory) -> None:
         self._factory = factory
