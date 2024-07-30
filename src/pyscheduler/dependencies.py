@@ -12,14 +12,14 @@ from pyscheduler.protocols.lock import Lock
 from pyscheduler.protocols.store import Store
 
 
-@dataclass
+@dataclass(kw_only=True)
 class CancelledTaskResult:
     """Result of a cancelled task."""
 
     status: Literal[e.Status.CANCELLED]
 
 
-@dataclass
+@dataclass(kw_only=True)
 class FailedTaskResult:
     """Result of a failed task."""
 
@@ -27,7 +27,7 @@ class FailedTaskResult:
     error: str
 
 
-@dataclass
+@dataclass(kw_only=True)
 class CompletedTaskResult:
     """Result of a completed task."""
 

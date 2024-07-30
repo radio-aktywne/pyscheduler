@@ -1,10 +1,8 @@
 from abc import abstractmethod
-from typing import Protocol, TypeVar
-
-T = TypeVar("T")
+from typing import Protocol
 
 
-class Queue(Protocol[T]):
+class Queue[T](Protocol):
     """Supports getting and putting items."""
 
     @abstractmethod

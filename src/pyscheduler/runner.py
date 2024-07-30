@@ -50,7 +50,7 @@ class Runner:
         self._resolver = ResultResolver(store, lock, cache)
 
     @asynccontextmanager
-    async def _manage_finished_event(self, id: uuid4) -> AsyncGenerator[Event, None]:
+    async def _manage_finished_event(self, id: uuid4) -> AsyncGenerator[Event]:
         finished = await self._cache.get(f"finished:{id}")
 
         try:
@@ -221,7 +221,7 @@ class Runner:
                 await asyncio.wait(handlers)
 
     @asynccontextmanager
-    async def run(self) -> AsyncGenerator[None, None]:
+    async def run(self) -> AsyncGenerator[None]:
         """Run in the context."""
 
         task = asyncio.create_task(self._process_queue())
