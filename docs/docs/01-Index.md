@@ -3,7 +3,7 @@ slug: /
 title: Index
 ---
 
-# pyscheduler package
+# pyscheduler
 
 Task scheduler for Python 🐍
 
