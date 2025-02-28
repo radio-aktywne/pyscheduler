@@ -38,9 +38,9 @@ class Specification(BaseModel[s.Specification]):
         }
 
     @classmethod
-    def deserialize[
-        C: Specification
-    ](cls: builtins.type[C], data: s.Specification) -> C:
+    def deserialize[C: Specification](
+        cls: builtins.type[C], data: s.Specification
+    ) -> C:
         return cls(
             type=data["type"],
             parameters=data["parameters"],
@@ -138,9 +138,9 @@ class CancelledTask(BaseModel[s.CancelledTask]):
         }
 
     @classmethod
-    def deserialize[
-        C: CancelledTask
-    ](cls: builtins.type[C], data: s.CancelledTask) -> C:
+    def deserialize[C: CancelledTask](
+        cls: builtins.type[C], data: s.CancelledTask
+    ) -> C:
         return cls(
             task=Task.deserialize(data["task"]),
             scheduled=datetime.fromisoformat(data["scheduled"]),
@@ -203,9 +203,9 @@ class CompletedTask(BaseModel[s.CompletedTask]):
         }
 
     @classmethod
-    def deserialize[
-        C: CompletedTask
-    ](cls: builtins.type[C], data: s.CompletedTask) -> C:
+    def deserialize[C: CompletedTask](
+        cls: builtins.type[C], data: s.CompletedTask
+    ) -> C:
         return cls(
             task=Task.deserialize(data["task"]),
             scheduled=datetime.fromisoformat(data["scheduled"]),
@@ -310,9 +310,9 @@ class Relationships(BaseModel[s.Relationships]):
         }
 
     @classmethod
-    def deserialize[
-        C: Relationships
-    ](cls: builtins.type[C], data: s.Relationships) -> C:
+    def deserialize[C: Relationships](
+        cls: builtins.type[C], data: s.Relationships
+    ) -> C:
         class Deserializer[R, S]:
             def deserialize(self, data: dict[str, list[S]]) -> dict[UUID, set[R]]:
                 return {
