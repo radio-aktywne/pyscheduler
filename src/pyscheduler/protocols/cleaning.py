@@ -14,14 +14,10 @@ class CleaningStrategy(Protocol):
     ) -> bool:
         """Evaluate if a task should be cleaned."""
 
-        pass
-
 
 class CleaningStrategyFactory(Protocol):
     """Factory for creating cleaning strategies."""
 
     @abstractmethod
-    async def create(self, type: str) -> CleaningStrategy | None:
+    async def create(self, strategy_type: str) -> CleaningStrategy | None:
         """Create a cleaning strategy."""
-
-        pass

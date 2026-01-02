@@ -17,9 +17,11 @@ from pyscheduler.protocols.store import Store
 
 
 class RemovePredicate(Protocol):
+    """Predicate for checking if a task can be removed."""
+
     @abstractmethod
     async def __call__(self, task: t.FinishedTask) -> bool:
-        pass
+        """Check if a task can be removed."""
 
 
 class Modifier:
@@ -33,87 +35,86 @@ class Modifier:
         return r.State.deserialize(state)
 
     async def _save_state(self, state: r.State) -> None:
-        state = state.serialize()
-        await self._store.set(state)
+        serialized_state = state.serialize()
+        await self._store.set(serialized_state)
 
     async def add_pending_task(
-        self, id: UUID, task: r.Task, scheduled: datetime
+        self, task_id: UUID, task: r.Task, scheduled: datetime
     ) -> r.PendingTask:
         """Add a task to the state."""
-
         state = await self._get_state()
 
         for dependency in task.dependencies.values():
             if dependency not in state.statuses:
-                raise DependencyNotFoundError(id)
+                raise DependencyNotFoundError(task_id)
 
-        task = r.PendingTask(task=task, scheduled=scheduled)
-        state.tasks.pending[id] = task
-        state.statuses[id] = e.Status.PENDING
+        pending_task = r.PendingTask(task=task, scheduled=scheduled)
+        state.tasks.pending[task_id] = pending_task
+        state.statuses[task_id] = e.Status.PENDING
 
-        dependencies = set(task.task.dependencies.values())
+        dependencies = set(pending_task.task.dependencies.values())
 
         if dependencies:
-            state.relationships.dependencies[id] = dependencies
+            state.relationships.dependencies[task_id] = dependencies
 
         for dependency in dependencies:
             if dependency not in state.relationships.dependents:
                 state.relationships.dependents[dependency] = set()
 
-            state.relationships.dependents[dependency].add(id)
+            state.relationships.dependents[dependency].add(task_id)
 
         await self._save_state(state)
 
-        return task
+        return pending_task
 
-    async def move_task_to_running(self, id: UUID, started: datetime) -> r.RunningTask:
+    async def move_task_to_running(
+        self, task_id: UUID, started: datetime
+    ) -> r.RunningTask:
         """Move a task to the running state."""
-
         state = await self._get_state()
-        status = state.statuses.get(id)
+        status = state.statuses.get(task_id)
 
         if status is None:
-            raise TaskNotFoundError(id)
+            raise TaskNotFoundError(task_id)
 
         if status != e.Status.PENDING:
-            raise TaskStatusError(id, status)
+            raise TaskStatusError(task_id, status)
 
-        task = state.tasks.pending.pop(id, None)
+        task = state.tasks.pending.pop(task_id, None)
 
         if task is None:
-            raise TaskNotFoundError(id)
+            raise TaskNotFoundError(task_id)
 
         task = r.RunningTask(task=task.task, scheduled=task.scheduled, started=started)
-        state.tasks.running[id] = task
-        state.statuses[id] = e.Status.RUNNING
+        state.tasks.running[task_id] = task
+        state.statuses[task_id] = e.Status.RUNNING
 
         await self._save_state(state)
 
         return task
 
     async def move_task_to_cancelled(
-        self, id: UUID, cancelled: datetime
+        self, task_id: UUID, cancelled: datetime
     ) -> r.CancelledTask:
         """Move a task to the cancelled state."""
-
         state = await self._get_state()
-        status = state.statuses.get(id)
+        status = state.statuses.get(task_id)
 
         if status is None:
-            raise TaskNotFoundError(id)
+            raise TaskNotFoundError(task_id)
 
         match status:
             case e.Status.PENDING:
-                task = state.tasks.pending.pop(id, None)
+                task = state.tasks.pending.pop(task_id, None)
                 started = None
             case e.Status.RUNNING:
-                task = state.tasks.running.pop(id, None)
-                started = task.started
+                task = state.tasks.running.pop(task_id, None)
+                started = task.started if task is not None else None
             case _:
-                raise TaskStatusError(id, status)
+                raise TaskStatusError(task_id, status)
 
         if task is None:
-            raise TaskNotFoundError(id)
+            raise TaskNotFoundError(task_id)
 
         task = r.CancelledTask(
             task=task.task,
@@ -121,31 +122,30 @@ class Modifier:
             started=started,
             cancelled=cancelled,
         )
-        state.tasks.cancelled[id] = task
-        state.statuses[id] = e.Status.CANCELLED
+        state.tasks.cancelled[task_id] = task
+        state.statuses[task_id] = e.Status.CANCELLED
 
         await self._save_state(state)
 
         return task
 
     async def move_task_to_failed(
-        self, id: UUID, failed: datetime, error: str
+        self, task_id: UUID, failed: datetime, error: str
     ) -> r.FailedTask:
         """Move a task to the failed state."""
-
         state = await self._get_state()
-        status = state.statuses.get(id)
+        status = state.statuses.get(task_id)
 
         if status is None:
-            raise TaskNotFoundError(id)
+            raise TaskNotFoundError(task_id)
 
         if status != e.Status.RUNNING:
-            raise TaskStatusError(id, status)
+            raise TaskStatusError(task_id, status)
 
-        task = state.tasks.running.pop(id, None)
+        task = state.tasks.running.pop(task_id, None)
 
         if task is None:
-            raise TaskNotFoundError(id)
+            raise TaskNotFoundError(task_id)
 
         task = r.FailedTask(
             task=task.task,
@@ -154,31 +154,30 @@ class Modifier:
             failed=failed,
             error=error,
         )
-        state.tasks.failed[id] = task
-        state.statuses[id] = e.Status.FAILED
+        state.tasks.failed[task_id] = task
+        state.statuses[task_id] = e.Status.FAILED
 
         await self._save_state(state)
 
         return task
 
     async def move_task_to_completed(
-        self, id: UUID, completed: datetime, result: types.JSON
+        self, task_id: UUID, completed: datetime, result: types.JSON
     ) -> r.CompletedTask:
         """Move a task to the completed state."""
-
         state = await self._get_state()
-        status = state.statuses.get(id)
+        status = state.statuses.get(task_id)
 
         if status is None:
-            raise TaskNotFoundError(id)
+            raise TaskNotFoundError(task_id)
 
         if status != e.Status.RUNNING:
-            raise TaskStatusError(id, status)
+            raise TaskStatusError(task_id, status)
 
-        task = state.tasks.running.pop(id, None)
+        task = state.tasks.running.pop(task_id, None)
 
         if task is None:
-            raise TaskNotFoundError(id)
+            raise TaskNotFoundError(task_id)
 
         task = r.CompletedTask(
             task=task.task,
@@ -187,22 +186,22 @@ class Modifier:
             completed=completed,
             result=result,
         )
-        state.tasks.completed[id] = task
-        state.statuses[id] = e.Status.COMPLETED
+        state.tasks.completed[task_id] = task
+        state.statuses[task_id] = e.Status.COMPLETED
 
         await self._save_state(state)
 
         return task
 
-    def _build_finished_task(self, id: UUID, state: r.State) -> t.FinishedTask:
-        status = state.statuses[id]
+    def _build_finished_task(self, task_id: UUID, state: r.State) -> t.FinishedTask:
+        status = state.statuses[task_id]
 
         match status:
             case e.Status.CANCELLED:
-                task = state.tasks.cancelled[id]
+                task = state.tasks.cancelled[task_id]
                 return t.CancelledTask(
                     task=t.Task(
-                        id=id,
+                        id=task_id,
                         operation=t.Specification(
                             type=task.task.operation.type,
                             parameters=task.task.operation.parameters,
@@ -218,10 +217,10 @@ class Modifier:
                     cancelled=task.cancelled,
                 )
             case e.Status.FAILED:
-                task = state.tasks.failed[id]
+                task = state.tasks.failed[task_id]
                 return t.FailedTask(
                     task=t.Task(
-                        id=id,
+                        id=task_id,
                         operation=t.Specification(
                             type=task.task.operation.type,
                             parameters=task.task.operation.parameters,
@@ -238,10 +237,10 @@ class Modifier:
                     error=task.error,
                 )
             case e.Status.COMPLETED:
-                task = state.tasks.completed[id]
+                task = state.tasks.completed[task_id]
                 return t.CompletedTask(
                     task=t.Task(
-                        id=id,
+                        id=task_id,
                         operation=t.Specification(
                             type=task.task.operation.type,
                             parameters=task.task.operation.parameters,
@@ -258,9 +257,9 @@ class Modifier:
                     result=task.result,
                 )
             case _:
-                raise TaskStatusError(id, status)
+                raise TaskStatusError(task_id, status)
 
-    async def remove_stale_tasks(
+    async def remove_stale_tasks(  # noqa: C901
         self,
         predicate: RemovePredicate | None = None,
     ) -> set[UUID]:
@@ -274,8 +273,8 @@ class Modifier:
         state = await self._get_state()
 
         pool = {
-            id
-            for id, status in state.statuses.items()
+            task_id
+            for task_id, status in state.statuses.items()
             if status in (e.Status.CANCELLED, e.Status.FAILED, e.Status.COMPLETED)
         }
 
@@ -286,34 +285,34 @@ class Modifier:
         while len(pool) != size:
             size = len(pool)
 
-            for id in pool.copy():
-                if id in state.relationships.dependents:
+            for task_id in pool.copy():
+                if task_id in state.relationships.dependents:
                     continue
 
-                if not await predicate(self._build_finished_task(id, state)):
+                if not await predicate(self._build_finished_task(task_id, state)):
                     continue
 
-                status = state.statuses[id]
+                status = state.statuses[task_id]
 
                 match status:
                     case e.Status.CANCELLED:
-                        state.tasks.cancelled.pop(id)
+                        state.tasks.cancelled.pop(task_id)
                     case e.Status.FAILED:
-                        state.tasks.failed.pop(id)
+                        state.tasks.failed.pop(task_id)
                     case e.Status.COMPLETED:
-                        state.tasks.completed.pop(id)
+                        state.tasks.completed.pop(task_id)
 
-                state.statuses.pop(id)
+                state.statuses.pop(task_id)
 
-                dependencies = state.relationships.dependencies.pop(id, set())
+                dependencies = state.relationships.dependencies.pop(task_id, set())
                 for dependency in dependencies:
                     if dependency in state.relationships.dependents:
-                        state.relationships.dependents[dependency].remove(id)
+                        state.relationships.dependents[dependency].remove(task_id)
                         if not state.relationships.dependents[dependency]:
                             state.relationships.dependents.pop(dependency)
 
-                pool.remove(id)
-                removed.add(id)
+                pool.remove(task_id)
+                removed.add(task_id)
 
         await self._save_state(state)
 

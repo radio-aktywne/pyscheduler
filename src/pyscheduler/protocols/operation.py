@@ -13,14 +13,10 @@ class Operation(Protocol):
     ) -> t.JSON:
         """Run the operation."""
 
-        pass
-
 
 class OperationFactory(Protocol):
     """Factory for creating operations."""
 
     @abstractmethod
-    async def create(self, type: str) -> Operation | None:
+    async def create(self, operation_type: str) -> Operation | None:
         """Create an operation."""
-
-        pass

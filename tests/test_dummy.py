@@ -1,4 +1,3 @@
-def test_dummy():
-    """Dummy test that always passes.."""
-
+def test_dummy() -> None:
+    """Dummy test that always passes."""
     assert True

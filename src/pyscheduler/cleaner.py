@@ -20,7 +20,6 @@ class Cleaner:
 
     async def clean(self, request: t.CleanRequest) -> t.CleaningResult:
         """Clean tasks."""
-
         strategy = await self._cleaning.create(request.strategy.type)
         if strategy is None:
             raise InvalidCleaningStrategyError(request.strategy.type)

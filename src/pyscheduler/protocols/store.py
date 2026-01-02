@@ -9,10 +9,6 @@ class Store[T](Protocol):
     async def get(self) -> T:
         """Return the stored value."""
 
-        pass
-
     @abstractmethod
     async def set(self, value: T) -> None:
         """Set the stored value."""
-
-        pass

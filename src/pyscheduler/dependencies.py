@@ -46,9 +46,9 @@ class ResultResolver:
         self._lock = lock
         self._cache = cache
 
-    async def _wait_until_finished(self, id: UUID) -> None:
+    async def _wait_until_finished(self, task_id: UUID) -> None:
         try:
-            finished = await self._cache.get(f"finished:{id}")
+            finished = await self._cache.get(f"finished:{task_id}")
             await finished.wait()
         except asyncio.CancelledError:
             pass
@@ -59,28 +59,34 @@ class ResultResolver:
 
         return r.State.deserialize(state)
 
-    async def resolve(self, id: UUID) -> TaskResult | None:
+    def _resolve_from_status(
+        self, status: e.Status, task_id: UUID, state: r.State
+    ) -> TaskResult | None:
+        match status:
+            case e.Status.CANCELLED:
+                return CancelledTaskResult(status=status)
+            case e.Status.FAILED:
+                failed = state.tasks.failed[task_id]
+                return FailedTaskResult(status=status, error=failed.error)
+            case e.Status.COMPLETED:
+                completed = state.tasks.completed[task_id]
+                return CompletedTaskResult(status=status, result=completed.result)
+            case _:
+                return None
+
+    async def resolve(self, task_id: UUID) -> TaskResult | None:
         """Resolve the result of a task."""
+        wait_until_finished = asyncio.create_task(self._wait_until_finished(task_id))
 
         try:
-            wait_until_finished = asyncio.create_task(self._wait_until_finished(id))
-
             state = await self._get_state()
-            status = state.statuses.get(id)
+            status = state.statuses.get(task_id)
 
             if status is None:
                 return None
 
-            if status == e.Status.CANCELLED:
-                return CancelledTaskResult(status=status)
-
-            if status == e.Status.FAILED:
-                failed = state.tasks.failed[id]
-                return FailedTaskResult(status=status, error=failed.error)
-
-            if status == e.Status.COMPLETED:
-                completed = state.tasks.completed[id]
-                return CompletedTaskResult(status=status, result=completed.result)
+            if result := self._resolve_from_status(status, task_id, state):
+                return result
 
             await wait_until_finished
         finally:
@@ -88,20 +94,9 @@ class ResultResolver:
             await wait_until_finished
 
         state = await self._get_state()
-        status = state.statuses.get(id)
+        status = state.statuses.get(task_id)
 
         if status is None:
             return None
 
-        if status == e.Status.CANCELLED:
-            return CancelledTaskResult(status=status)
-
-        if status == e.Status.FAILED:
-            failed = state.tasks.failed[id]
-            return FailedTaskResult(status=status, error=failed.error)
-
-        if status == e.Status.COMPLETED:
-            completed = state.tasks.completed[id]
-            return CompletedTaskResult(status=status, result=completed.result)
-
-        return None
+        return self._resolve_from_status(status, task_id, state)

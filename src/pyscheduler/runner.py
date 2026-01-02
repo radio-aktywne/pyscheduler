@@ -1,7 +1,7 @@
 import asyncio
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from uuid import UUID, uuid4
+from uuid import UUID
 
 from pyscheduler.dependencies import ResultResolver
 from pyscheduler.errors import (
@@ -30,7 +30,7 @@ from pyscheduler.time import utcnow
 class Runner:
     """Manages lifecycle of scheduled tasks."""
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         store: Store[s.State],
         lock: Lock,
@@ -50,47 +50,47 @@ class Runner:
         self._resolver = ResultResolver(store, lock, cache)
 
     @asynccontextmanager
-    async def _manage_finished_event(self, id: uuid4) -> AsyncGenerator[Event]:
-        finished = await self._cache.get(f"finished:{id}")
+    async def _manage_finished_event(self, task_id: UUID) -> AsyncGenerator[Event]:
+        finished = await self._cache.get(f"finished:{task_id}")
 
         try:
             yield finished
         finally:
-            await self._cache.delete(f"finished:{id}")
+            await self._cache.delete(f"finished:{task_id}")
 
-    async def _get_task(self, id: UUID) -> r.Task:
+    async def _get_task(self, task_id: UUID) -> r.Task:
         async with self._lock:
             state = await self._store.get()
 
         state = r.State.deserialize(state)
-        status = state.statuses.get(id)
+        status = state.statuses.get(task_id)
 
         if status is None:
-            raise TaskNotFoundError(id)
+            raise TaskNotFoundError(task_id)
 
         if status != e.Status.PENDING:
-            raise UnexpectedTaskStatusError(id, status)
+            raise UnexpectedTaskStatusError(task_id, status)
 
-        task = state.tasks.pending.get(id)
+        task = state.tasks.pending.get(task_id)
 
         if task is None:
-            raise TaskNotFoundError(id)
+            raise TaskNotFoundError(task_id)
 
         return task.task
 
-    async def _create_operation(self, type: str) -> Operation:
-        operation = await self._operations.create(type)
+    async def _create_operation(self, operation_type: str) -> Operation:
+        operation = await self._operations.create(operation_type)
 
         if operation is None:
-            raise InvalidOperationError(type)
+            raise InvalidOperationError(operation_type)
 
         return operation
 
-    async def _create_condition(self, type: str) -> Condition:
-        condition = await self._conditions.create(type)
+    async def _create_condition(self, condition_type: str) -> Condition:
+        condition = await self._conditions.create(condition_type)
 
         if condition is None:
-            raise InvalidConditionError(type)
+            raise InvalidConditionError(condition_type)
 
         return condition
 
@@ -105,60 +105,63 @@ class Runner:
             if result is None:
                 raise DependencyNotFoundError(dependency)
 
-            if result.status in (e.Status.CANCELLED, e.Status.FAILED):
-                raise UnsuccessfulDependencyError(dependency, result.status)
-
-            deps[parameter] = result.result
+            match result.status:
+                case e.Status.CANCELLED | e.Status.FAILED:
+                    raise UnsuccessfulDependencyError(dependency, result.status)
+                case _:
+                    deps[parameter] = result.result
 
         return deps
 
-    async def _set_task_as_running(self, id: UUID) -> None:
+    async def _set_task_as_running(self, task_id: UUID) -> None:
         async with self._lock:
-            await self._modifier.move_task_to_running(id, utcnow())
+            await self._modifier.move_task_to_running(task_id, utcnow())
 
-    async def _set_task_as_failed(self, id: UUID, error: str, finished: Event) -> None:
+    async def _set_task_as_failed(
+        self, task_id: UUID, error: str, finished: Event
+    ) -> None:
         async with self._lock:
-            await self._modifier.move_task_to_failed(id, utcnow(), error)
+            await self._modifier.move_task_to_failed(task_id, utcnow(), error)
             await finished.notify()
 
     async def _set_task_as_completed(
-        self, id: UUID, result: types.JSON, finished: Event
+        self, task_id: UUID, result: types.JSON, finished: Event
     ) -> None:
         async with self._lock:
-            await self._modifier.move_task_to_completed(id, utcnow(), result)
+            await self._modifier.move_task_to_completed(task_id, utcnow(), result)
             await finished.notify()
 
-    async def _monitor_cancellation(self, id: UUID) -> None:
+    async def _monitor_cancellation(self, task_id: UUID) -> None:
         try:
-            cancelled = await self._cache.get(f"cancelled:{id}")
+            cancelled = await self._cache.get(f"cancelled:{task_id}")
             await cancelled.wait()
         except asyncio.CancelledError:
             pass
 
-    async def _run_task(self, id: UUID) -> None:
+    async def _run_task(self, task_id: UUID) -> None:
         try:
-            task = await self._get_task(id)
+            task = await self._get_task(task_id)
 
-            async with self._manage_finished_event(id) as finished:
+            async with self._manage_finished_event(task_id) as finished:
                 try:
                     operation = await self._create_operation(task.operation.type)
                 except InvalidOperationError as ex:
                     error = f"Operation {ex.type} is not supported."
-                    await self._set_task_as_failed(id, error, finished)
+                    await self._set_task_as_failed(task_id, error, finished)
                     return
 
                 try:
                     condition = await self._create_condition(task.condition.type)
                 except InvalidConditionError as ex:
                     error = f"Condition {ex.type} is not supported."
-                    await self._set_task_as_failed(id, error, finished)
+                    await self._set_task_as_failed(task_id, error, finished)
                     return
 
                 try:
                     dependencies = await self._resolve_dependencies(task.dependencies)
                 except UnsuccessfulDependencyError as ex:
                     error = f"Dependency {ex.id} finished with status {ex.status}."
-                    await self._set_task_as_failed(id, error, finished)
+                    await self._set_task_as_failed(task_id, error, finished)
                     return
 
                 try:
@@ -167,10 +170,10 @@ class Runner:
                     raise
                 except Exception as ex:
                     error = f"Condition {task.condition.type} failed: {ex}."
-                    await self._set_task_as_failed(id, error, finished)
+                    await self._set_task_as_failed(task_id, error, finished)
                     return
 
-                await self._set_task_as_running(id)
+                await self._set_task_as_running(task_id)
 
                 try:
                     parameters = task.operation.parameters
@@ -179,16 +182,16 @@ class Runner:
                     raise
                 except Exception as ex:
                     error = f"Operation {task.operation.type} failed: {ex}."
-                    await self._set_task_as_failed(id, error, finished)
+                    await self._set_task_as_failed(task_id, error, finished)
                     return
 
-                await self._set_task_as_completed(id, result, finished)
+                await self._set_task_as_completed(task_id, result, finished)
         except asyncio.CancelledError:
             pass
 
-    async def _handle_task_added(self, id: UUID) -> None:
-        run = asyncio.create_task(self._run_task(id))
-        monitor = asyncio.create_task(self._monitor_cancellation(id))
+    async def _handle_task_added(self, task_id: UUID) -> None:
+        run = asyncio.create_task(self._run_task(task_id))
+        monitor = asyncio.create_task(self._monitor_cancellation(task_id))
 
         try:
             await asyncio.wait([run, monitor], return_when=asyncio.FIRST_COMPLETED)
@@ -208,8 +211,8 @@ class Runner:
 
         try:
             while True:
-                id = await self._queue.get()
-                handler = asyncio.create_task(self._handle_task_added(id))
+                task_id = await self._queue.get()
+                handler = asyncio.create_task(self._handle_task_added(task_id))
                 handlers.append(handler)
         except asyncio.CancelledError:
             pass
@@ -223,7 +226,6 @@ class Runner:
     @asynccontextmanager
     async def run(self) -> AsyncGenerator[None]:
         """Run in the context."""
-
         task = asyncio.create_task(self._process_queue())
 
         try:

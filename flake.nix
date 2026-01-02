@@ -1,7 +1,7 @@
 {
   inputs = {
     nixpkgs = {
-      url = "github:NixOS/nixpkgs/nixos-24.11";
+      url = "github:NixOS/nixpkgs/nixos-25.05";
     };
 
     flake-parts = {
@@ -35,14 +35,16 @@
         system,
         ...
       }: let
+        nix = pkgs.nix;
         node = pkgs.nodejs;
-        python = pkgs.python312;
+        python = pkgs.python313;
         nil = pkgs.nil;
         task = pkgs.go-task;
         coreutils = pkgs.coreutils;
         trunk = pkgs.trunk-io;
-        poetry = pkgs.poetry;
-        copier = pkgs.copier;
+        uv = pkgs.uv;
+        cacert = pkgs.cacert;
+        copier = pkgs.python313.withPackages (ps: [ps.copier]);
       in {
         # Override pkgs argument
         _module.args.pkgs = import inputs.nixpkgs {
@@ -66,44 +68,20 @@
             name = "dev";
 
             packages = [
+              nix
               node
               python
               nil
               task
               coreutils
               trunk
-              poetry
+              uv
+              cacert
               copier
             ];
 
-            shellHook = ''
-              export TMPDIR=/tmp
-            '';
-          };
-
-          package = pkgs.mkShell {
-            name = "package";
-
-            packages = [
-              python
-              task
-              coreutils
-              poetry
-            ];
-
-            shellHook = ''
-              export TMPDIR=/tmp
-            '';
-          };
-
-          template = pkgs.mkShell {
-            name = "template";
-
-            packages = [
-              task
-              coreutils
-              copier
-            ];
+            UV_PYTHON = python;
+            UV_PYTHON_PREFERENCE = "only-system";
 
             shellHook = ''
               export TMPDIR=/tmp
@@ -114,11 +92,18 @@
             name = "lint";
 
             packages = [
+              nix
               node
+              python
               task
               coreutils
               trunk
+              uv
+              cacert
             ];
+
+            UV_PYTHON = python;
+            UV_PYTHON_PREFERENCE = "only-system";
 
             shellHook = ''
               export TMPDIR=/tmp
@@ -132,8 +117,12 @@
               python
               task
               coreutils
-              poetry
+              uv
+              cacert
             ];
+
+            UV_PYTHON = python;
+            UV_PYTHON_PREFERENCE = "only-system";
 
             shellHook = ''
               export TMPDIR=/tmp

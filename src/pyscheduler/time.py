@@ -1,7 +1,6 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 
 def utcnow() -> datetime:
     """Return the current time in UTC with no timezone information."""
-
-    return datetime.now(tz=timezone.utc).replace(tzinfo=None)
+    return datetime.now(tz=UTC).replace(tzinfo=None)

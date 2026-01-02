@@ -15,19 +15,18 @@ class Canceller:
 
     async def cancel(self, request: t.CancelRequest) -> t.CancelledTask:
         """Cancel a task."""
-
-        id = request.id
+        task_id = request.id
 
         async with self._lock:
-            task = await self._modifier.move_task_to_cancelled(id, utcnow())
-            cancelled = await self._cache.get(f"cancelled:{id}")
+            task = await self._modifier.move_task_to_cancelled(task_id, utcnow())
+            cancelled = await self._cache.get(f"cancelled:{task_id}")
             await cancelled.notify()
-            finished = await self._cache.get(f"finished:{id}")
+            finished = await self._cache.get(f"finished:{task_id}")
             await finished.notify()
 
         return t.CancelledTask(
             task=t.Task(
-                id=id,
+                id=task_id,
                 operation=t.Specification(
                     type=task.task.operation.type,
                     parameters=task.task.operation.parameters,

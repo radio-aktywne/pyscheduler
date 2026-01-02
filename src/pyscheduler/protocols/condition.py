@@ -11,14 +11,10 @@ class Condition(Protocol):
     async def wait(self, parameters: dict[str, t.JSON]) -> None:
         """Wait for the condition to be met."""
 
-        pass
-
 
 class ConditionFactory(Protocol):
     """Factory for creating conditions."""
 
     @abstractmethod
-    async def create(self, type: str) -> Condition | None:
+    async def create(self, condition_type: str) -> Condition | None:
         """Create a condition."""
-
-        pass
