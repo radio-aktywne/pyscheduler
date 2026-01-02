@@ -1,7 +1,7 @@
-import builtins
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Self, override
 from uuid import UUID
 
 from pyscheduler.models import enums as e
@@ -9,19 +9,17 @@ from pyscheduler.models import types as t
 from pyscheduler.models.data import storage as s
 
 
-class BaseModel[S: dict](ABC):
+class BaseModel[S](ABC):
     """Base class for runtime data models."""
 
     @abstractmethod
     def serialize(self) -> S:
         """Serialize the model to a storage model."""
-        pass
 
     @classmethod
     @abstractmethod
-    def deserialize[C: BaseModel](cls: builtins.type[C], data: S) -> C:
+    def deserialize(cls, data: S) -> Self:
         """Deserialize the model from a storage model."""
-        pass
 
 
 @dataclass(kw_only=True)
@@ -31,6 +29,7 @@ class Specification(BaseModel[s.Specification]):
     type: str
     parameters: dict[str, t.JSON]
 
+    @override
     def serialize(self) -> s.Specification:
         return {
             "type": self.type,
@@ -38,9 +37,8 @@ class Specification(BaseModel[s.Specification]):
         }
 
     @classmethod
-    def deserialize[C: Specification](
-        cls: builtins.type[C], data: s.Specification
-    ) -> C:
+    @override
+    def deserialize(cls, data: s.Specification) -> Self:
         return cls(
             type=data["type"],
             parameters=data["parameters"],
@@ -55,6 +53,7 @@ class Task(BaseModel[s.Task]):
     condition: Specification
     dependencies: dict[str, UUID]
 
+    @override
     def serialize(self) -> s.Task:
         return {
             "operation": self.operation.serialize(),
@@ -65,7 +64,8 @@ class Task(BaseModel[s.Task]):
         }
 
     @classmethod
-    def deserialize[C: Task](cls: builtins.type[C], data: s.Task) -> C:
+    @override
+    def deserialize(cls, data: s.Task) -> Self:
         return cls(
             operation=Specification.deserialize(data["operation"]),
             condition=Specification.deserialize(data["condition"]),
@@ -82,6 +82,7 @@ class PendingTask(BaseModel[s.PendingTask]):
     task: Task
     scheduled: datetime
 
+    @override
     def serialize(self) -> s.PendingTask:
         return {
             "task": self.task.serialize(),
@@ -89,7 +90,8 @@ class PendingTask(BaseModel[s.PendingTask]):
         }
 
     @classmethod
-    def deserialize[C: PendingTask](cls: builtins.type[C], data: s.PendingTask) -> C:
+    @override
+    def deserialize(cls, data: s.PendingTask) -> Self:
         return cls(
             task=Task.deserialize(data["task"]),
             scheduled=datetime.fromisoformat(data["scheduled"]),
@@ -104,6 +106,7 @@ class RunningTask(BaseModel[s.RunningTask]):
     scheduled: datetime
     started: datetime
 
+    @override
     def serialize(self) -> s.RunningTask:
         return {
             "task": self.task.serialize(),
@@ -112,7 +115,8 @@ class RunningTask(BaseModel[s.RunningTask]):
         }
 
     @classmethod
-    def deserialize[C: RunningTask](cls: builtins.type[C], data: s.RunningTask) -> C:
+    @override
+    def deserialize(cls, data: s.RunningTask) -> Self:
         return cls(
             task=Task.deserialize(data["task"]),
             scheduled=datetime.fromisoformat(data["scheduled"]),
@@ -129,6 +133,7 @@ class CancelledTask(BaseModel[s.CancelledTask]):
     started: datetime | None
     cancelled: datetime
 
+    @override
     def serialize(self) -> s.CancelledTask:
         return {
             "task": self.task.serialize(),
@@ -138,9 +143,8 @@ class CancelledTask(BaseModel[s.CancelledTask]):
         }
 
     @classmethod
-    def deserialize[C: CancelledTask](
-        cls: builtins.type[C], data: s.CancelledTask
-    ) -> C:
+    @override
+    def deserialize(cls, data: s.CancelledTask) -> Self:
         return cls(
             task=Task.deserialize(data["task"]),
             scheduled=datetime.fromisoformat(data["scheduled"]),
@@ -163,6 +167,7 @@ class FailedTask(BaseModel[s.FailedTask]):
     failed: datetime
     error: str
 
+    @override
     def serialize(self) -> s.FailedTask:
         return {
             "task": self.task.serialize(),
@@ -173,7 +178,8 @@ class FailedTask(BaseModel[s.FailedTask]):
         }
 
     @classmethod
-    def deserialize[C: FailedTask](cls: builtins.type[C], data: s.FailedTask) -> C:
+    @override
+    def deserialize(cls, data: s.FailedTask) -> Self:
         return cls(
             task=Task.deserialize(data["task"]),
             scheduled=datetime.fromisoformat(data["scheduled"]),
@@ -193,6 +199,7 @@ class CompletedTask(BaseModel[s.CompletedTask]):
     completed: datetime
     result: t.JSON
 
+    @override
     def serialize(self) -> s.CompletedTask:
         return {
             "task": self.task.serialize(),
@@ -203,9 +210,8 @@ class CompletedTask(BaseModel[s.CompletedTask]):
         }
 
     @classmethod
-    def deserialize[C: CompletedTask](
-        cls: builtins.type[C], data: s.CompletedTask
-    ) -> C:
+    @override
+    def deserialize(cls, data: s.CompletedTask) -> Self:
         return cls(
             task=Task.deserialize(data["task"]),
             scheduled=datetime.fromisoformat(data["scheduled"]),
@@ -225,8 +231,9 @@ class Tasks(BaseModel[s.Tasks]):
     failed: dict[UUID, FailedTask]
     completed: dict[UUID, CompletedTask]
 
+    @override
     def serialize(self) -> s.Tasks:
-        class Serializer[R, S]:
+        class Serializer[R: BaseModel, S]:
             def serialize(self, data: dict[UUID, R]) -> dict[str, S]:
                 return {str(key): value.serialize() for key, value in data.items()}
 
@@ -249,9 +256,10 @@ class Tasks(BaseModel[s.Tasks]):
         }
 
     @classmethod
-    def deserialize[C: Tasks](cls: builtins.type[C], data: s.Tasks) -> C:
-        class Deserializer[R, S]:
-            def __init__(self, model: builtins.type[R]) -> None:
+    @override
+    def deserialize(cls, data: s.Tasks) -> Self:
+        class Deserializer[R: BaseModel, S]:
+            def __init__(self, model: type[R]) -> None:
                 self._model = model
 
             def deserialize(self, data: dict[str, S]) -> dict[UUID, R]:
@@ -261,27 +269,27 @@ class Tasks(BaseModel[s.Tasks]):
                 }
 
         return cls(
-            pending=Deserializer[s.PendingTask, PendingTask](
+            pending=Deserializer[PendingTask, s.PendingTask](
                 PendingTask,
             ).deserialize(
                 data["pending"],
             ),
-            running=Deserializer[s.RunningTask, RunningTask](
+            running=Deserializer[RunningTask, s.RunningTask](
                 RunningTask,
             ).deserialize(
                 data["running"],
             ),
-            cancelled=Deserializer[s.CancelledTask, CancelledTask](
+            cancelled=Deserializer[CancelledTask, s.CancelledTask](
                 CancelledTask,
             ).deserialize(
                 data["cancelled"],
             ),
-            failed=Deserializer[s.FailedTask, FailedTask](
+            failed=Deserializer[FailedTask, s.FailedTask](
                 FailedTask,
             ).deserialize(
                 data["failed"],
             ),
-            completed=Deserializer[s.CompletedTask, CompletedTask](
+            completed=Deserializer[CompletedTask, s.CompletedTask](
                 CompletedTask,
             ).deserialize(
                 data["completed"],
@@ -296,33 +304,33 @@ class Relationships(BaseModel[s.Relationships]):
     dependents: dict[UUID, set[UUID]]
     dependencies: dict[UUID, set[UUID]]
 
+    @override
     def serialize(self) -> s.Relationships:
-        class Serializer[R, S]:
-            def serialize(self, data: dict[UUID, set[R]]) -> dict[str, list[S]]:
+        class Serializer:
+            def serialize(self, data: dict[UUID, set[UUID]]) -> dict[str, list[str]]:
                 return {
                     str(key): [str(value) for value in values]
                     for key, values in data.items()
                 }
 
         return {
-            "dependents": Serializer[UUID, str]().serialize(self.dependents),
-            "dependencies": Serializer[UUID, str]().serialize(self.dependencies),
+            "dependents": Serializer().serialize(self.dependents),
+            "dependencies": Serializer().serialize(self.dependencies),
         }
 
     @classmethod
-    def deserialize[C: Relationships](
-        cls: builtins.type[C], data: s.Relationships
-    ) -> C:
-        class Deserializer[R, S]:
-            def deserialize(self, data: dict[str, list[S]]) -> dict[UUID, set[R]]:
+    @override
+    def deserialize(cls, data: s.Relationships) -> Self:
+        class Deserializer:
+            def deserialize(self, data: dict[str, list[str]]) -> dict[UUID, set[UUID]]:
                 return {
                     UUID(key): {UUID(value) for value in values}
                     for key, values in data.items()
                 }
 
         return cls(
-            dependents=Deserializer[str, UUID]().deserialize(data["dependents"]),
-            dependencies=Deserializer[str, UUID]().deserialize(data["dependencies"]),
+            dependents=Deserializer().deserialize(data["dependents"]),
+            dependencies=Deserializer().deserialize(data["dependencies"]),
         )
 
 
@@ -334,6 +342,7 @@ class State(BaseModel[s.State]):
     statuses: dict[UUID, e.Status]
     relationships: Relationships
 
+    @override
     def serialize(self) -> s.State:
         return {
             "tasks": self.tasks.serialize(),
@@ -342,7 +351,8 @@ class State(BaseModel[s.State]):
         }
 
     @classmethod
-    def deserialize[C: State](cls: builtins.type[C], data: s.State) -> C:
+    @override
+    def deserialize(cls, data: s.State) -> Self:
         return cls(
             tasks=Tasks.deserialize(data["tasks"]),
             statuses={

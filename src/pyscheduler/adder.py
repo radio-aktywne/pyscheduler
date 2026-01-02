@@ -30,7 +30,6 @@ class Adder:
 
     async def add(self, request: t.ScheduleRequest) -> t.PendingTask:
         """Add a task."""
-
         operation = await self._operations.create(request.operation.type)
         if operation is None:
             raise InvalidOperationError(request.operation.type)
@@ -39,7 +38,7 @@ class Adder:
         if condition is None:
             raise InvalidConditionError(request.condition.type)
 
-        id = uuid4()
+        task_id = uuid4()
 
         task = r.Task(
             operation=r.Specification(
@@ -54,12 +53,12 @@ class Adder:
         )
 
         async with self._lock:
-            task = await self._modifier.add_pending_task(id, task, utcnow())
-            await self._queue.put(id)
+            task = await self._modifier.add_pending_task(task_id, task, utcnow())
+            await self._queue.put(task_id)
 
         return t.PendingTask(
             task=t.Task(
-                id=id,
+                id=task_id,
                 operation=t.Specification(
                     type=task.task.operation.type,
                     parameters=task.task.operation.parameters,

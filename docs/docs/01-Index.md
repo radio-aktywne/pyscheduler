@@ -5,8 +5,9 @@ title: Index
 
 # pyscheduler
 
-Task scheduler for Python 🐍
+Task scheduler package for Python 🐍
 
 ## 💡 About
 
-This package provides asynchronous task scheduler in pure Python.
+`pyscheduler` is a [`Python`](https://www.python.org) package
+that provides asynchronous task scheduler.

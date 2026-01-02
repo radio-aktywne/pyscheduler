@@ -9,13 +9,9 @@ class Event(Protocol):
     async def wait(self) -> None:
         """Wait for the event to happen."""
 
-        pass
-
     @abstractmethod
     async def notify(self) -> None:
         """Notify that the event has happened."""
-
-        pass
 
 
 class EventFactory(Protocol):
@@ -24,5 +20,3 @@ class EventFactory(Protocol):
     @abstractmethod
     async def create(self, topic: str) -> Event:
         """Create an event for the given topic."""
-
-        pass

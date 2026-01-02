@@ -17,7 +17,6 @@ class BaseReader:
 
     async def _get_state(self) -> r.State:
         """Get the current state."""
-
         async with self._lock:
             state = await self._store.get()
 
@@ -27,18 +26,17 @@ class BaseReader:
 class PendingTasksReader(BaseReader):
     """Reader for pending tasks."""
 
-    async def get(self, id: UUID) -> t.PendingTask | None:
+    async def get(self, task_id: UUID) -> t.PendingTask | None:
         """Get a pending task by id."""
-
         state = await self._get_state()
-        task = state.tasks.pending.get(id)
+        task = state.tasks.pending.get(task_id)
 
         if task is None:
             return None
 
         return t.PendingTask(
             task=t.Task(
-                id=id,
+                id=task_id,
                 operation=t.Specification(
                     type=task.task.operation.type,
                     parameters=task.task.operation.parameters,
@@ -56,18 +54,17 @@ class PendingTasksReader(BaseReader):
 class RunningTasksReader(BaseReader):
     """Reader for running tasks."""
 
-    async def get(self, id: UUID) -> t.RunningTask | None:
+    async def get(self, task_id: UUID) -> t.RunningTask | None:
         """Get a running task by id."""
-
         state = await self._get_state()
-        task = state.tasks.running.get(id)
+        task = state.tasks.running.get(task_id)
 
         if task is None:
             return None
 
         return t.RunningTask(
             task=t.Task(
-                id=id,
+                id=task_id,
                 operation=t.Specification(
                     type=task.task.operation.type,
                     parameters=task.task.operation.parameters,
@@ -86,18 +83,17 @@ class RunningTasksReader(BaseReader):
 class CancelledTasksReader(BaseReader):
     """Reader for cancelled tasks."""
 
-    async def get(self, id: UUID) -> t.CancelledTask | None:
+    async def get(self, task_id: UUID) -> t.CancelledTask | None:
         """Get a cancelled task by id."""
-
         state = await self._get_state()
-        task = state.tasks.cancelled.get(id)
+        task = state.tasks.cancelled.get(task_id)
 
         if task is None:
             return None
 
         return t.CancelledTask(
             task=t.Task(
-                id=id,
+                id=task_id,
                 operation=t.Specification(
                     type=task.task.operation.type,
                     parameters=task.task.operation.parameters,
@@ -117,18 +113,17 @@ class CancelledTasksReader(BaseReader):
 class FailedTasksReader(BaseReader):
     """Reader for failed tasks."""
 
-    async def get(self, id: UUID) -> t.FailedTask | None:
+    async def get(self, task_id: UUID) -> t.FailedTask | None:
         """Get a failed task by id."""
-
         state = await self._get_state()
-        task = state.tasks.failed.get(id)
+        task = state.tasks.failed.get(task_id)
 
         if task is None:
             return None
 
         return t.FailedTask(
             task=t.Task(
-                id=id,
+                id=task_id,
                 operation=t.Specification(
                     type=task.task.operation.type,
                     parameters=task.task.operation.parameters,
@@ -149,18 +144,17 @@ class FailedTasksReader(BaseReader):
 class CompletedTasksReader(BaseReader):
     """Reader for completed tasks."""
 
-    async def get(self, id: UUID) -> t.GenericTask | None:
+    async def get(self, task_id: UUID) -> t.CompletedTask | None:
         """Get a completed task by id."""
-
         state = await self._get_state()
-        task = state.tasks.completed.get(id)
+        task = state.tasks.completed.get(task_id)
 
         if task is None:
             return None
 
         return t.CompletedTask(
             task=t.Task(
-                id=id,
+                id=task_id,
                 operation=t.Specification(
                     type=task.task.operation.type,
                     parameters=task.task.operation.parameters,
@@ -192,36 +186,30 @@ class Reader(BaseReader):
     @property
     def pending(self) -> PendingTasksReader:
         """Reader for pending tasks."""
-
         return self._pending
 
     @property
     def running(self) -> RunningTasksReader:
         """Reader for running tasks."""
-
         return self._running
 
     @property
     def cancelled(self) -> CancelledTasksReader:
         """Reader for cancelled tasks."""
-
         return self._cancelled
 
     @property
     def failed(self) -> FailedTasksReader:
         """Reader for failed tasks."""
-
         return self._failed
 
     @property
     def completed(self) -> CompletedTasksReader:
         """Reader for completed tasks."""
-
         return self._completed
 
     async def list(self) -> t.TaskIndex:
         """List all tasks by status."""
-
         state = await self._get_state()
 
         return t.TaskIndex(
@@ -232,27 +220,26 @@ class Reader(BaseReader):
             completed=set(state.tasks.completed.keys()),
         )
 
-    async def get(self, id: UUID) -> t.GenericTask | None:
+    async def get(self, task_id: UUID) -> t.GenericTask | None:
         """Get a task by id."""
-
         state = await self._get_state()
-        status = state.statuses.get(id)
+        status = state.statuses.get(task_id)
 
         match status:
             case e.Status.PENDING:
-                task = await self._pending.get(id)
+                task = await self._pending.get(task_id)
                 return t.GenericTask(task=task.task, status=status) if task else None
             case e.Status.RUNNING:
-                task = await self._running.get(id)
+                task = await self._running.get(task_id)
                 return t.GenericTask(task=task.task, status=status) if task else None
             case e.Status.CANCELLED:
-                task = await self._cancelled.get(id)
+                task = await self._cancelled.get(task_id)
                 return t.GenericTask(task=task.task, status=status) if task else None
             case e.Status.FAILED:
-                task = await self._failed.get(id)
+                task = await self._failed.get(task_id)
                 return t.GenericTask(task=task.task, status=status) if task else None
             case e.Status.COMPLETED:
-                task = await self._completed.get(id)
+                task = await self._completed.get(task_id)
                 return t.GenericTask(task=task.task, status=status) if task else None
             case _:
                 return None

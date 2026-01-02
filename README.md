@@ -2,7 +2,7 @@
 
 <div align="center">
 
-Task scheduler for Python 🐍
+Task scheduler package for Python 🐍
 
 [![Lint](https://github.com/radio-aktywne/pyscheduler/actions/workflows/lint.yaml/badge.svg)](https://github.com/radio-aktywne/pyscheduler/actions/workflows/lint.yaml)
 [![Test](https://github.com/radio-aktywne/pyscheduler/actions/workflows/test.yaml/badge.svg)](https://github.com/radio-aktywne/pyscheduler/actions/workflows/test.yaml)
@@ -14,7 +14,8 @@ Task scheduler for Python 🐍
 
 ## 💡 About
 
-This package provides asynchronous task scheduler in pure Python.
+`pyscheduler` is a [`Python`](https://www.python.org) package
+that provides asynchronous task scheduler.
 
 ## 📄 Further Reading
 

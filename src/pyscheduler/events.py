@@ -17,7 +17,6 @@ class EventCache:
 
     async def get(self, topic: str) -> Event:
         """Get an event for the given topic."""
-
         async with self._lock:
             if topic not in self._cache:
                 self._cache[topic] = await self._factory.create(topic)
@@ -26,12 +25,10 @@ class EventCache:
 
     async def delete(self, topic: str) -> None:
         """Delete the event for the given topic from the cache."""
-
         async with self._lock:
             self._cache.pop(topic, None)
 
     async def clear(self) -> None:
         """Clear the cache."""
-
         async with self._lock:
             self._cache.clear()

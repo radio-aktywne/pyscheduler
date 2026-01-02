@@ -22,7 +22,7 @@ from pyscheduler.runner import Runner
 class Scheduler:
     """Scheduler that manages the lifecycle of scheduled tasks."""
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         store: Store[s.State],
         lock: Lock,
@@ -49,27 +49,22 @@ class Scheduler:
     @property
     def tasks(self) -> Reader:
         """Reader for tasks."""
-
         return self._tasks
 
     async def schedule(self, request: t.ScheduleRequest) -> t.PendingTask:
         """Schedule a task."""
-
         return await self._adder.add(request)
 
     async def cancel(self, request: t.CancelRequest) -> t.CancelledTask:
         """Cancel a task."""
-
         return await self._canceller.cancel(request)
 
     async def clean(self, request: t.CleanRequest) -> t.CleaningResult:
         """Clean tasks."""
-
         return await self._cleaner.clean(request)
 
     @asynccontextmanager
     async def run(self) -> AsyncGenerator[None]:
         """Run in the context."""
-
         async with self._runner.run():
             yield
