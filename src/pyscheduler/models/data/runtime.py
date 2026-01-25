@@ -7,6 +7,7 @@ from uuid import UUID
 from pyscheduler.models import enums as e
 from pyscheduler.models import types as t
 from pyscheduler.models.data import storage as s
+from pyscheduler.time import isoparse, isostringify
 
 
 class BaseModel[S](ABC):
@@ -86,7 +87,7 @@ class PendingTask(BaseModel[s.PendingTask]):
     def serialize(self) -> s.PendingTask:
         return {
             "task": self.task.serialize(),
-            "scheduled": self.scheduled.isoformat(),
+            "scheduled": isostringify(self.scheduled),
         }
 
     @classmethod
@@ -94,7 +95,7 @@ class PendingTask(BaseModel[s.PendingTask]):
     def deserialize(cls, data: s.PendingTask) -> Self:
         return cls(
             task=Task.deserialize(data["task"]),
-            scheduled=datetime.fromisoformat(data["scheduled"]),
+            scheduled=isoparse(data["scheduled"]),
         )
 
 
@@ -110,8 +111,8 @@ class RunningTask(BaseModel[s.RunningTask]):
     def serialize(self) -> s.RunningTask:
         return {
             "task": self.task.serialize(),
-            "scheduled": self.scheduled.isoformat(),
-            "started": self.started.isoformat(),
+            "scheduled": isostringify(self.scheduled),
+            "started": isostringify(self.started),
         }
 
     @classmethod
@@ -119,8 +120,8 @@ class RunningTask(BaseModel[s.RunningTask]):
     def deserialize(cls, data: s.RunningTask) -> Self:
         return cls(
             task=Task.deserialize(data["task"]),
-            scheduled=datetime.fromisoformat(data["scheduled"]),
-            started=datetime.fromisoformat(data["started"]),
+            scheduled=isoparse(data["scheduled"]),
+            started=isoparse(data["started"]),
         )
 
 
@@ -137,9 +138,9 @@ class CancelledTask(BaseModel[s.CancelledTask]):
     def serialize(self) -> s.CancelledTask:
         return {
             "task": self.task.serialize(),
-            "scheduled": self.scheduled.isoformat(),
-            "started": self.started.isoformat() if self.started is not None else None,
-            "cancelled": self.cancelled.isoformat(),
+            "scheduled": isostringify(self.scheduled),
+            "started": isostringify(self.started) if self.started is not None else None,
+            "cancelled": isostringify(self.cancelled),
         }
 
     @classmethod
@@ -147,13 +148,11 @@ class CancelledTask(BaseModel[s.CancelledTask]):
     def deserialize(cls, data: s.CancelledTask) -> Self:
         return cls(
             task=Task.deserialize(data["task"]),
-            scheduled=datetime.fromisoformat(data["scheduled"]),
+            scheduled=isoparse(data["scheduled"]),
             started=(
-                datetime.fromisoformat(data["started"])
-                if data["started"] is not None
-                else None
+                isoparse(data["started"]) if data["started"] is not None else None
             ),
-            cancelled=datetime.fromisoformat(data["cancelled"]),
+            cancelled=isoparse(data["cancelled"]),
         )
 
 
@@ -171,9 +170,9 @@ class FailedTask(BaseModel[s.FailedTask]):
     def serialize(self) -> s.FailedTask:
         return {
             "task": self.task.serialize(),
-            "scheduled": self.scheduled.isoformat(),
-            "started": self.started.isoformat(),
-            "failed": self.failed.isoformat(),
+            "scheduled": isostringify(self.scheduled),
+            "started": isostringify(self.started),
+            "failed": isostringify(self.failed),
             "error": self.error,
         }
 
@@ -182,9 +181,9 @@ class FailedTask(BaseModel[s.FailedTask]):
     def deserialize(cls, data: s.FailedTask) -> Self:
         return cls(
             task=Task.deserialize(data["task"]),
-            scheduled=datetime.fromisoformat(data["scheduled"]),
-            started=datetime.fromisoformat(data["started"]),
-            failed=datetime.fromisoformat(data["failed"]),
+            scheduled=isoparse(data["scheduled"]),
+            started=isoparse(data["started"]),
+            failed=isoparse(data["failed"]),
             error=data["error"],
         )
 
@@ -203,9 +202,9 @@ class CompletedTask(BaseModel[s.CompletedTask]):
     def serialize(self) -> s.CompletedTask:
         return {
             "task": self.task.serialize(),
-            "scheduled": self.scheduled.isoformat(),
-            "started": self.started.isoformat(),
-            "completed": self.completed.isoformat(),
+            "scheduled": isostringify(self.scheduled),
+            "started": isostringify(self.started),
+            "completed": isostringify(self.completed),
             "result": self.result,
         }
 
@@ -214,9 +213,9 @@ class CompletedTask(BaseModel[s.CompletedTask]):
     def deserialize(cls, data: s.CompletedTask) -> Self:
         return cls(
             task=Task.deserialize(data["task"]),
-            scheduled=datetime.fromisoformat(data["scheduled"]),
-            started=datetime.fromisoformat(data["started"]),
-            completed=datetime.fromisoformat(data["completed"]),
+            scheduled=isoparse(data["scheduled"]),
+            started=isoparse(data["started"]),
+            completed=isoparse(data["completed"]),
             result=data["result"],
         )
 

@@ -8,7 +8,7 @@ from pyscheduler.protocols.condition import ConditionFactory
 from pyscheduler.protocols.lock import Lock
 from pyscheduler.protocols.operation import OperationFactory
 from pyscheduler.protocols.queue import Queue
-from pyscheduler.time import utcnow
+from pyscheduler.time import awareutcnow
 
 
 class Adder:
@@ -53,7 +53,7 @@ class Adder:
         )
 
         async with self._lock:
-            task = await self._modifier.add_pending_task(task_id, task, utcnow())
+            task = await self._modifier.add_pending_task(task_id, task, awareutcnow())
             await self._queue.put(task_id)
 
         return t.PendingTask(

@@ -2,7 +2,7 @@ from pyscheduler.events import EventCache
 from pyscheduler.models import transfer as t
 from pyscheduler.modifier import Modifier
 from pyscheduler.protocols.lock import Lock
-from pyscheduler.time import utcnow
+from pyscheduler.time import awareutcnow
 
 
 class Canceller:
@@ -18,7 +18,7 @@ class Canceller:
         task_id = request.id
 
         async with self._lock:
-            task = await self._modifier.move_task_to_cancelled(task_id, utcnow())
+            task = await self._modifier.move_task_to_cancelled(task_id, awareutcnow())
             cancelled = await self._cache.get(f"cancelled:{task_id}")
             await cancelled.notify()
             finished = await self._cache.get(f"finished:{task_id}")
