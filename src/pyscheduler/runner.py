@@ -24,7 +24,7 @@ from pyscheduler.protocols.lock import Lock
 from pyscheduler.protocols.operation import Operation, OperationFactory
 from pyscheduler.protocols.queue import Queue
 from pyscheduler.protocols.store import Store
-from pyscheduler.time import utcnow
+from pyscheduler.time import awareutcnow
 
 
 class Runner:
@@ -115,20 +115,20 @@ class Runner:
 
     async def _set_task_as_running(self, task_id: UUID) -> None:
         async with self._lock:
-            await self._modifier.move_task_to_running(task_id, utcnow())
+            await self._modifier.move_task_to_running(task_id, awareutcnow())
 
     async def _set_task_as_failed(
         self, task_id: UUID, error: str, finished: Event
     ) -> None:
         async with self._lock:
-            await self._modifier.move_task_to_failed(task_id, utcnow(), error)
+            await self._modifier.move_task_to_failed(task_id, awareutcnow(), error)
             await finished.notify()
 
     async def _set_task_as_completed(
         self, task_id: UUID, result: types.JSON, finished: Event
     ) -> None:
         async with self._lock:
-            await self._modifier.move_task_to_completed(task_id, utcnow(), result)
+            await self._modifier.move_task_to_completed(task_id, awareutcnow(), result)
             await finished.notify()
 
     async def _monitor_cancellation(self, task_id: UUID) -> None:
