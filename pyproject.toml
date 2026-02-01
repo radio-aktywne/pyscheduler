@@ -6,6 +6,8 @@ requires-python = "~= 3.13.0"
 
 [dependency-groups]
 dev = [
+  # Template management
+  "copier ~= 9.6.0",
   # Testing framework
   "pytest ~= 9.0.0",
   # Asyncio support for pytest

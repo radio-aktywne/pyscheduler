@@ -44,7 +44,6 @@
         trunk = pkgs.trunk-io;
         uv = pkgs.uv;
         cacert = pkgs.cacert;
-        copier = pkgs.python313.withPackages (ps: [ps.copier]);
       in {
         # Override pkgs argument
         _module.args.pkgs = import inputs.nixpkgs {
@@ -77,7 +76,6 @@
               trunk
               uv
               cacert
-              copier
             ];
 
             UV_PYTHON = python;
