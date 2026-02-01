@@ -1,6 +1,6 @@
 [project]
 name = "pyscheduler"
-version = "0.9.0"
+version = "0.10.0"
 classifiers = ["Private :: Do Not Upload"]
 requires-python = "~= 3.13.0"
 
