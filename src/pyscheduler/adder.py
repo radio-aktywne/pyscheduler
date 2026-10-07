@@ -56,7 +56,7 @@ class Adder:
 
             try:
                 await self._queue.put(task_id)
-            except (asyncio.CancelledError, Exception):
+            except asyncio.CancelledError, Exception:
                 await self._modifier.move_task_to_sleeping(task_id, awareutcnow())
                 raise
 

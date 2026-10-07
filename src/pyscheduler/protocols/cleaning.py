@@ -1,8 +1,7 @@
 from abc import abstractmethod
 from typing import Protocol
 
-from pyscheduler.models import transfer as t
-from pyscheduler.models import types
+from pyscheduler.models import transfer as t, types
 
 
 class CleaningStrategy(Protocol):

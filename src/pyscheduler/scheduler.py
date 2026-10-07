@@ -23,7 +23,7 @@ from pyscheduler.runner import Runner
 class Scheduler:
     """Scheduler that manages the lifecycle of scheduled tasks."""
 
-    def __init__(  # noqa: PLR0913
+    def __init__(
         self,
         store: Store[s.State],
         lock: Lock,

@@ -1,8 +1,7 @@
 import asyncio
 from uuid import UUID
 
-from pyscheduler.models.data import runtime as r
-from pyscheduler.models.data import storage as s
+from pyscheduler.models.data import runtime as r, storage as s
 from pyscheduler.modifier import Modifier
 from pyscheduler.protocols.lock import Lock
 from pyscheduler.protocols.queue import Queue
@@ -36,6 +35,6 @@ class Recoverer:
 
                 try:
                     await self._queue.put(task_id)
-                except (asyncio.CancelledError, Exception):
+                except asyncio.CancelledError, Exception:
                     await self._modifier.move_task_to_sleeping(task_id, awareutcnow())
                     raise
