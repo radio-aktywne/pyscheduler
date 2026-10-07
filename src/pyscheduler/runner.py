@@ -14,10 +14,8 @@ from pyscheduler.errors import (
     UnsuccessfulDependencyError,
 )
 from pyscheduler.events import EventCache
-from pyscheduler.models import enums as e
-from pyscheduler.models import types
-from pyscheduler.models.data import runtime as r
-from pyscheduler.models.data import storage as s
+from pyscheduler.models import enums as e, types
+from pyscheduler.models.data import runtime as r, storage as s
 from pyscheduler.modifier import Modifier
 from pyscheduler.protocols.condition import Condition, ConditionFactory
 from pyscheduler.protocols.event import Event
@@ -31,7 +29,7 @@ from pyscheduler.time import awareutcnow
 class Runner:
     """Manages lifecycle of scheduled tasks."""
 
-    def __init__(  # noqa: PLR0913
+    def __init__(
         self,
         store: Store[s.State],
         lock: Lock,
@@ -216,7 +214,7 @@ class Runner:
                         await condition.wait(task.condition.parameters)
                     except asyncio.CancelledError:
                         raise
-                    except Exception as ex:
+                    except Exception as ex:  # noqa: BLE001
                         await self._set_task_as_failed(
                             task_id,
                             f"Condition {task.condition.type} failed: {ex}.",
@@ -236,7 +234,7 @@ class Runner:
                         result = await operation.run(parameters, dependencies)
                     except asyncio.CancelledError:
                         raise
-                    except Exception as ex:
+                    except Exception as ex:  # noqa: BLE001
                         await self._set_task_as_failed(
                             task_id,
                             f"Operation {task.operation.type} failed: {ex}.",

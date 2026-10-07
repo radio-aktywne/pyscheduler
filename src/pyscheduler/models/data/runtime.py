@@ -4,8 +4,7 @@ from datetime import datetime
 from typing import Self, override
 from uuid import UUID
 
-from pyscheduler.models import enums as e
-from pyscheduler.models import types as t
+from pyscheduler.models import enums as e, types as t
 from pyscheduler.models.data import storage as s
 from pyscheduler.time import isoparse, isostringify
 
